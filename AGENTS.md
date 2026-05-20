@@ -61,6 +61,7 @@
 - `2026-02-06`: Established living documentation policy, added mandatory AGENTS+README sync for critical horizontal changes, and aligned structure/build guidance with segregated AMD64 CPU/GPU image families.
 - `2026-03-19`: Activated the AMD64 CPU/GPU GitHub Actions workflows as live `.yaml` files and added `workflow_dispatch` so image publish jobs can be launched manually as well as by path-based pushes.
 - `2026-05-20`: Hardened the shared Docker-in-Docker entrypoint startup contract so failed or unresponsive inner `dockerd` exits the container instead of leaving edge-node images stuck in a pre-application sleep loop.
+- `2026-05-20`: Added `scripts/entrypoint.sh` to the AMD64 CPU/GPU workflow path filters so shared entrypoint changes trigger both image build-and-push workflows.
 
 ## Commit & Pull Request Guidelines
 - Match history style: short imperative subjects with type prefixes (`fix: ...`, `chore: ...`, `feat: ...`).

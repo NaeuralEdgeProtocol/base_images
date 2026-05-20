@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "base_edge_node_amd64_cpu/**"
+      - "scripts/entrypoint.sh"
 
 jobs:
   build-and-push-edge-node-image:
