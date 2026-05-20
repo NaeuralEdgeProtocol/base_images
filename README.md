@@ -63,6 +63,8 @@ docker run --rm -e EE_DD=1 -e DOCKERD_READY_TIMEOUT=15 \
 
 The command must exit non-zero promptly rather than hanging indefinitely. The timeout is configurable with `DOCKERD_READY_TIMEOUT` seconds; `0` disables the readiness timeout but still preserves the normal startup path.
 
+Pushes that modify `scripts/entrypoint.sh` trigger both AMD64 CPU and GPU image workflows because the file is shared by both image families.
+
 ## Documentation Policy
 - `AGENTS.md` is the living operations contract for this repo.
 - Critical horizontal changes must update both `AGENTS.md` and `README.md` in the same change set.
