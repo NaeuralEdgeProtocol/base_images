@@ -53,6 +53,16 @@ docker run --rm ratio1/base_edge_node_amd64_cpu:latest ffmpeg -codecs | head
 docker run --rm ratio1/base_edge_node_amd64_gpu:latest ffmpeg -codecs | head
 ```
 
+For shared Docker-in-Docker entrypoint changes, validate the fail-fast path before publishing:
+
+```bash
+docker run --rm -e EE_DD=1 -e DOCKERD_READY_TIMEOUT=15 \
+  -e DOCKERD_STORAGE_DRIVER=definitely-invalid --privileged \
+  ratio1/base_edge_node_amd64_cpu:latest true
+```
+
+The command must exit non-zero promptly rather than hanging indefinitely. The timeout is configurable with `DOCKERD_READY_TIMEOUT` seconds; `0` disables the readiness timeout but still preserves the normal startup path.
+
 ## Documentation Policy
 - `AGENTS.md` is the living operations contract for this repo.
 - Critical horizontal changes must update both `AGENTS.md` and `README.md` in the same change set.
