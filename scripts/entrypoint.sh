@@ -6,6 +6,14 @@ if [ "${EE_DD:-}" = "0" ] || [ "${EE_DD:-}" = "false" ]; then
     exec "$@"
 fi
 
+DOCKERD_READY_TIMEOUT="${DOCKERD_READY_TIMEOUT:-120}"
+case "$DOCKERD_READY_TIMEOUT" in
+	''|*[!0-9]*)
+		echo "Invalid DOCKERD_READY_TIMEOUT='$DOCKERD_READY_TIMEOUT'; expected seconds as a non-negative integer." >&2
+		exit 1
+		;;
+esac
+
 _tls_ensure_private() {
 	local f="$1"; shift
 	[ -s "$f" ] || openssl genrsa -out "$f" 4096
@@ -250,10 +258,48 @@ iptables --version || true
 # Start dockerd in the background
 echo "Launching dockerd in the background..."
 dockerd $DOCKERD_ARGS  &
+dockerd_pid="$!"
+
+_dockerd_running() {
+	kill -0 "$dockerd_pid" 2>/dev/null || return 1
+	if _has_command ps; then
+		dockerd_state="$(ps -o stat= -p "$dockerd_pid" 2>/dev/null | awk 'NR==1 {print $1}')"
+		case "$dockerd_state" in
+			Z*) return 1 ;;
+		esac
+	fi
+	return 0
+}
 
 # Wait for dockerd to become responsive
 echo "Waiting for dockerd to respond..."
+dockerd_wait_started="$(date +%s 2>/dev/null || echo 0)"
 while ! docker info >/dev/null 2>&1; do
+	if ! _dockerd_running; then
+		dockerd_status=1
+		if wait "$dockerd_pid"; then
+			dockerd_status=0
+		else
+			dockerd_status="$?"
+		fi
+		if [ "$dockerd_status" -eq 0 ]; then
+			dockerd_status=1
+		fi
+		echo "dockerd exited before becoming responsive (exit $dockerd_status)." >&2
+		exit "$dockerd_status"
+	fi
+	if [ "$DOCKERD_READY_TIMEOUT" -gt 0 ]; then
+		now="$(date +%s 2>/dev/null || echo 0)"
+		if [ "$dockerd_wait_started" -gt 0 ] && [ "$now" -gt 0 ]; then
+			elapsed=$((now - dockerd_wait_started))
+			if [ "$elapsed" -ge "$DOCKERD_READY_TIMEOUT" ]; then
+				echo "Timed out after ${DOCKERD_READY_TIMEOUT}s waiting for dockerd to become responsive." >&2
+				kill "$dockerd_pid" 2>/dev/null || true
+				wait "$dockerd_pid" 2>/dev/null || true
+				exit 1
+			fi
+		fi
+	fi
   sleep 1
 done
 echo "dockerd is now running."
