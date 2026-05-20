@@ -234,7 +234,7 @@ fi
 # Remove leftover PID files to avoid startup conflicts
 find /run /var/run -iname 'docker*.pid' -delete || true
 
-#iptables checks for Docker-in-Docker
+# iptables checks for Docker-in-Docker
 iptablesLegacy=""
 if ! iptables -nL > /dev/null 2>&1; then
     # Attempt to load nf_tables first
